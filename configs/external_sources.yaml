@@ -1,0 +1,80 @@
+benchmark_overlap_policy: >
+  Prefer clean external sources and disclose any MTEB/BEIR overlap via
+  ModelMeta.training_datasets. Cap first runs; do not download full multi-TB corpora.
+
+sources:
+  - name: nllb
+    dataset: allenai/nllb
+    family: bitext
+    priority: 1
+    description: Large multilingual bitext for cross-lingual alignment and STS transfer.
+    languages: [en, ko, ar, zh, fr, de, hi, id, it, ja, pt, ru, es, vi, th, pl]
+    shape: parallel sentence pairs
+    license: odc-by
+    overlap_risk: medium
+    default_cap: 100000
+    streaming: true
+    notes: Sample language directions involving the 16 target languages.
+
+  - name: ccmatrix
+    dataset: sentence-transformers/parallel-sentences-ccmatrix
+    family: bitext
+    priority: 2
+    description: CCMatrix parallel sentences repackaged for sentence-transformers.
+    languages: [en, ko, ar, zh, fr, de, hi, id, it, ja, pt, ru, es, vi, th, pl]
+    shape: sentence1/sentence2 pairs
+    license: mixed
+    overlap_risk: medium
+    default_cap: 100000
+    streaming: true
+
+  - name: xp3x
+    dataset: CohereLabs/xP3x
+    family: instruction
+    priority: 3
+    description: Multilingual prompt-response pairs for instruction-aware embeddings.
+    languages: [en, ko, ar, zh, fr, de, hi, id, it, ja, pt, ru, es, vi, th, pl]
+    shape: prompt/response pairs
+    license: apache-2.0
+    overlap_risk: high
+    default_cap: 50000
+    streaming: true
+    notes: Filter by source dataset; never use xP3all evaluation mixes.
+
+  - name: s2orc
+    dataset: sentence-transformers/s2orc
+    family: retrieval
+    priority: 4
+    description: Title-abstract and citation structural pairs; mostly English, useful retrieval signal.
+    languages: [en]
+    shape: title/abstract pairs
+    license: odc-by-1.0
+    overlap_risk: low
+    default_cap: 100000
+    streaming: true
+
+  - name: wikipedia-struct
+    dataset: wikimedia/wikipedia
+    family: retrieval
+    priority: 5
+    description: Title/section structural pairs from Wikipedia dumps.
+    languages: [en, ko, ar, zh, fr, de, hi, id, it, ja, pt, ru, es, vi, th, pl]
+    shape: title/section or section/section pairs
+    license: cc-by-sa-3.0
+    overlap_risk: medium
+    default_cap: 50000
+    streaming: true
+    notes: Build pairs yourself; do not ingest MTEB Wikipedia retrieval/reranking eval queries.
+
+  - name: embed-nemotron
+    dataset: nvidia/embed-nemotron-dataset-v1
+    family: mixed
+    priority: 1
+    description: Released multilingual embedding mixture with synthetic classification and mined negatives.
+    languages: [en, ko, ar, zh, fr, de, hi, id, it, ja, pt, ru, es, vi, th, pl]
+    shape: query/positive/negatives
+    license: mixed
+    overlap_risk: high
+    default_cap: 100000
+    streaming: true
+    notes: Prefer SyntheticClassificationData and non-overlapping subsets; filter MIRACL/MSMARCO/etc.

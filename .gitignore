@@ -1,0 +1,12 @@
+data/
+*.parquet
+.pytest_cache/
+.mypy_cache/
+__pycache__/
+*.egg-info/
+.venv/
+dist/
+build/
+.ruff_cache/
+*.pyc
+.DS_Store

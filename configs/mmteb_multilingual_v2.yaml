@@ -1,0 +1,650 @@
+benchmark: "MTEB(Multilingual, v2)"
+mteb_commit: "5594cc91d76bea60a014b22e6999c4d223af3037"
+target_languages:
+  en: eng-Latn
+  ko: kor-Hang
+  ar: ara-Arab
+  zh: zho-Hans
+  fr: fra-Latn
+  de: deu-Latn
+  hi: hin-Deva
+  id: ind-Latn
+  it: ita-Latn
+  ja: jpn-Jpan
+  pt: por-Latn
+  ru: rus-Cyrl
+  es: spa-Latn
+  vi: vie-Latn
+  th: tha-Thai
+  pl: pol-Latn
+
+# Catalog of STS / Retrieval / Classification / Clustering / Reranking tasks that
+# intersect the target languages. training_eligible means a physical split exists
+# that is NOT listed in eval_splits. Never train on eval_splits even if named train.
+
+tasks:
+  # -------------------- Classification (eligible) --------------------
+  - name: DBpediaClassification
+    family: classification
+    dataset: mteb/DBpediaClassification
+    revision: da1478c37d6ac46d5ca45aaf2a156020e2e9bfea
+    eval_splits: [test]
+    license: unknown
+    training_eligible: true
+    configs:
+      - name: default
+        language: eng-Latn
+        available_splits: [train, test]
+
+  - name: PoemSentimentClassification
+    family: classification
+    dataset: mteb/PoemSentimentClassification
+    revision: 84af4753ebb04ca836fb54ce89a339839b03b748
+    eval_splits: [validation, test]
+    license: unknown
+    training_eligible: true
+    configs:
+      - name: default
+        language: eng-Latn
+        available_splits: [train, validation, test]
+
+  - name: ToxicConversationsClassification
+    family: classification
+    dataset: mteb/toxic_conversations_50k
+    revision: edfaf9da55d3dd50d43143d90c1ac476895ae6de
+    eval_splits: [test]
+    license: unknown
+    training_eligible: true
+    configs:
+      - name: default
+        language: eng-Latn
+        available_splits: [train, test]
+
+  - name: TweetTopicSingleClassification
+    family: classification
+    dataset: mteb/TweetTopicSingleClassification
+    revision: b4280e921a2760ce34d2dd80a9e5dc8bcbf61785
+    eval_splits: [test_2021]
+    license: unknown
+    training_eligible: true
+    configs:
+      - name: default
+        language: eng-Latn
+        available_splits: [train, validation, test_2020, test_2021]
+
+  - name: IndicLangClassification
+    family: classification
+    dataset: mteb/IndicLangClassification
+    revision: 36d9c05b5a4ba276554abc4eaaae87666d1e9c61
+    eval_splits: [test]
+    license: unknown
+    training_eligible: true
+    configs:
+      - name: default
+        language: hin-Deva
+        available_splits: [train, test]
+
+  - name: ItaCaseholdClassification
+    family: classification
+    dataset: mteb/ItaCaseholdClassification
+    revision: 2ca13897a3d1952b746e748a8584208699c0340e
+    eval_splits: [test]
+    license: unknown
+    training_eligible: true
+    configs:
+      - name: default
+        language: ita-Latn
+        available_splits: [train, test]
+
+  - name: AmazonCounterfactualClassification
+    family: classification
+    dataset: mteb/amazon_counterfactual
+    revision: 1f7e6a9d6fa6e64c53d146e428565640410c0df1
+    eval_splits: [validation, test]
+    license: unknown
+    training_eligible: true
+    configs:
+      - name: en
+        language: eng-Latn
+        available_splits: [train, validation, test]
+      - name: de
+        language: deu-Latn
+        available_splits: [train, validation, test]
+      - name: ja
+        language: jpn-Jpan
+        available_splits: [train, validation, test]
+
+  - name: CataloniaTweetClassification
+    family: classification
+    dataset: mteb/CataloniaTweetClassification
+    revision: a160e486a21cea511a4b23a90e6bd6f7920d3a8f
+    eval_splits: [validation, test]
+    license: unknown
+    training_eligible: true
+    configs:
+      - name: spanish
+        language: spa-Latn
+        available_splits: [train, validation, test]
+
+  - name: MassiveIntentClassification
+    family: classification
+    dataset: mteb/amazon_massive_intent
+    revision: 4672e20407010da34463acc759c162ca9734bca6
+    eval_splits: [validation, test]
+    license: apache-2.0
+    training_eligible: true
+    notes: Shared intent ontology across languages; cross-language positives are allowed.
+    configs:
+      - {name: en, language: eng-Latn, available_splits: [train, validation, test]}
+      - {name: ko, language: kor-Hang, available_splits: [train, validation, test]}
+      - {name: ar, language: ara-Arab, available_splits: [train, validation, test]}
+      - {name: zh-CN, language: zho-Hans, available_splits: [train, validation, test]}
+      - {name: fr, language: fra-Latn, available_splits: [train, validation, test]}
+      - {name: de, language: deu-Latn, available_splits: [train, validation, test]}
+      - {name: hi, language: hin-Deva, available_splits: [train, validation, test]}
+      - {name: id, language: ind-Latn, available_splits: [train, validation, test]}
+      - {name: it, language: ita-Latn, available_splits: [train, validation, test]}
+      - {name: ja, language: jpn-Jpan, available_splits: [train, validation, test]}
+      - {name: pt, language: por-Latn, available_splits: [train, validation, test]}
+      - {name: ru, language: rus-Cyrl, available_splits: [train, validation, test]}
+      - {name: es, language: spa-Latn, available_splits: [train, validation, test]}
+      - {name: vi, language: vie-Latn, available_splits: [train, validation, test]}
+      - {name: th, language: tha-Thai, available_splits: [train, validation, test]}
+      - {name: pl, language: pol-Latn, available_splits: [train, validation, test]}
+
+  - name: NusaX-senti
+    family: classification
+    dataset: mteb/NusaX-senti
+    revision: 7b2ff4facde8a6473f667a38edef1d03ce9ca0dc
+    eval_splits: [test]
+    license: unknown
+    training_eligible: true
+    configs:
+      - {name: eng, language: eng-Latn, available_splits: [train, validation, test]}
+      - {name: ind, language: ind-Latn, available_splits: [train, validation, test]}
+
+  - name: SwissJudgementClassification
+    family: classification
+    dataset: mteb/SwissJudgementClassification
+    revision: 2541705ce837c495e85aa3c44b41a92fa4bd12a8
+    eval_splits: [test]
+    license: unknown
+    training_eligible: true
+    configs:
+      - {name: de, language: deu-Latn, available_splits: [train, validation, test]}
+      - {name: fr, language: fra-Latn, available_splits: [train, validation, test]}
+      - {name: it, language: ita-Latn, available_splits: [train, validation, test]}
+
+  - name: PolEmo2.0-OUT
+    family: classification
+    dataset: mteb/PolEmo2.0-OUT
+    revision: 4cdfe32a4a7b964afb7aaf9430b9ce6804f7d7e9
+    eval_splits: [test]
+    license: cc-by-sa-4.0
+    training_eligible: true
+    configs:
+      - name: default
+        language: pol-Latn
+        available_splits: [train, validation, test]
+
+  - name: PAC
+    family: classification
+    dataset: mteb/PAC
+    revision: d09e1c9f0f04f7f52f5cbfb74fa6c793c4eb84da
+    eval_splits: [test]
+    license: unknown
+    training_eligible: true
+    configs:
+      - name: default
+        language: pol-Latn
+        available_splits: [train, test]
+
+  # -------------------- Classification (ineligible) --------------------
+  - name: FinancialPhrasebankClassification
+    family: classification
+    dataset: mteb/FinancialPhrasebankClassification
+    revision: 44023d2ee430a3be2d2ee573801616d9e1392fbd
+    eval_splits: [train]
+    training_eligible: false
+    ineligibility_reason: MTEB evaluates the physical train split.
+    configs:
+      - {name: default, language: eng-Latn, available_splits: [train]}
+
+  - name: SentimentAnalysisHindi
+    family: classification
+    dataset: mteb/SentimentAnalysisHindi
+    revision: feab4a1cfc55f4b799f4ed902d8967e2ab68425c
+    eval_splits: [train]
+    training_eligible: false
+    ineligibility_reason: MTEB evaluates the physical train split.
+    configs:
+      - {name: default, language: hin-Deva, available_splits: [train]}
+
+  - name: IndonesianIdClickbaitClassification
+    family: classification
+    dataset: mteb/IndonesianIdClickbaitClassification
+    revision: fa22e2fe229619ae18cd236e23f538abf828f171
+    eval_splits: [train]
+    training_eligible: false
+    ineligibility_reason: MTEB evaluates the physical train split.
+    configs:
+      - {name: default, language: ind-Latn, available_splits: [train]}
+
+  - name: KorSarcasmClassification
+    family: classification
+    dataset: mteb/KorSarcasmClassification
+    revision: 6701f384372c04aa8c64b10582e72eb84135a1d4
+    eval_splits: [train]
+    training_eligible: false
+    ineligibility_reason: MTEB evaluates the physical train split.
+    configs:
+      - {name: default, language: kor-Hang, available_splits: [train]}
+
+  - name: MultiHateClassification
+    family: classification
+    dataset: mteb/multi-hatecheck
+    revision: 8f95949846bb9e33c6aaf730ccfdb8fe6bcfb7a9
+    eval_splits: [test]
+    training_eligible: false
+    ineligibility_reason: Test-only; no non-eval training split.
+    configs:
+      - {name: default, language: multilingual, available_splits: [test]}
+
+  # -------------------- Clustering --------------------
+  - name: SIB200ClusteringS2S
+    family: clustering
+    dataset: mteb/sib200
+    revision: a74d7350ea12af010cfb1c21e34f1f81fd2e615b
+    eval_splits: [test]
+    training_eligible: false
+    ineligibility_reason: MTEB concatenates train+validation+test into the evaluation test split.
+    notes: Physical train exists on Hub but is part of the official evaluation construction.
+    configs:
+      - {name: eng_Latn, language: eng-Latn, available_splits: [train, validation, test]}
+      - {name: kor_Hang, language: kor-Hang, available_splits: [train, validation, test]}
+      - {name: arb_Arab, language: ara-Arab, available_splits: [train, validation, test]}
+      - {name: zho_Hans, language: zho-Hans, available_splits: [train, validation, test]}
+      - {name: fra_Latn, language: fra-Latn, available_splits: [train, validation, test]}
+      - {name: deu_Latn, language: deu-Latn, available_splits: [train, validation, test]}
+      - {name: hin_Deva, language: hin-Deva, available_splits: [train, validation, test]}
+      - {name: ind_Latn, language: ind-Latn, available_splits: [train, validation, test]}
+      - {name: ita_Latn, language: ita-Latn, available_splits: [train, validation, test]}
+      - {name: jpn_Jpan, language: jpn-Jpan, available_splits: [train, validation, test]}
+      - {name: por_Latn, language: por-Latn, available_splits: [train, validation, test]}
+      - {name: rus_Cyrl, language: rus-Cyrl, available_splits: [train, validation, test]}
+      - {name: spa_Latn, language: spa-Latn, available_splits: [train, validation, test]}
+      - {name: vie_Latn, language: vie-Latn, available_splits: [train, validation, test]}
+      - {name: tha_Thai, language: tha-Thai, available_splits: [train, validation, test]}
+      - {name: pol_Latn, language: pol-Latn, available_splits: [train, validation, test]}
+
+  - name: WikiCitiesClustering
+    family: clustering
+    dataset: mteb/WikiCitiesClustering
+    revision: 9f302fc86ddf2d9133ebcc03ee3a285f4729bb16
+    eval_splits: [test]
+    training_eligible: false
+    ineligibility_reason: Test-only clustering task.
+    configs:
+      - {name: default, language: eng-Latn, available_splits: [test]}
+
+  - name: ArXivHierarchicalClusteringP2P
+    family: clustering
+    dataset: mteb/arxiv-clustering-p2p
+    revision: 0bbdb47bcbe3a90093699aefeed338a0f28a7ee8
+    eval_splits: [test]
+    training_eligible: false
+    ineligibility_reason: Test-only clustering task.
+    configs:
+      - {name: default, language: eng-Latn, available_splits: [test]}
+
+  - name: CLSClusteringP2P.v2
+    family: clustering
+    dataset: mteb/CLSClusteringP2P.v2
+    revision: 4b012f4818da8625de8e2e90526db1570e7ed2c7
+    eval_splits: [test]
+    training_eligible: false
+    ineligibility_reason: Test-only clustering task.
+    configs:
+      - {name: default, language: zho-Hans, available_splits: [test]}
+
+  - name: AlloProfClusteringS2S.v2
+    family: clustering
+    dataset: mteb/AlloProfClusteringS2S.v2
+    revision: c802b993cf2a8dcaeadb6f9cc8ccd364e251feaa
+    eval_splits: [test]
+    training_eligible: false
+    ineligibility_reason: Test-only clustering task.
+    configs:
+      - {name: default, language: fra-Latn, available_splits: [test]}
+
+  - name: PlscClusteringP2P.v2
+    family: clustering
+    dataset: mteb/PlscClusteringP2P.v2
+    revision: 82128bcad8e4713bcaf0449ed7e02109aa00ca0c
+    eval_splits: [test]
+    training_eligible: false
+    ineligibility_reason: Test-only clustering task.
+    license: cc0-1.0
+    configs:
+      - {name: default, language: pol-Latn, available_splits: [test]}
+
+  # -------------------- Retrieval (mostly no train) --------------------
+  - name: ArguAna
+    family: retrieval
+    dataset: mteb/arguana
+    revision: c22ab2a51041ffd869aaddef7af8d8215647e41a
+    eval_splits: [test]
+    training_eligible: false
+    ineligibility_reason: No non-eval retrieval train split in MTEB Multilingual v2.
+    configs:
+      - {name: default, language: eng-Latn, available_splits: [test]}
+
+  - name: SCIDOCS
+    family: retrieval
+    dataset: mteb/scidocs
+    revision: f8c2fcf00f625baaa80f62ec5bd9e1fff3b8ae88
+    eval_splits: [test]
+    training_eligible: false
+    ineligibility_reason: No non-eval retrieval train split in MTEB Multilingual v2.
+    configs:
+      - {name: default, language: eng-Latn, available_splits: [test]}
+
+  - name: TRECCOVID
+    family: retrieval
+    dataset: mteb/trec-covid
+    revision: bb9466bac8153a0349341eb1b22e06409e78ef4e
+    eval_splits: [test]
+    training_eligible: false
+    ineligibility_reason: No non-eval retrieval train split in MTEB Multilingual v2.
+    configs:
+      - {name: default, language: eng-Latn, available_splits: [test]}
+
+  - name: MIRACLRetrievalHardNegatives
+    family: retrieval
+    dataset: mteb/MIRACLRetrievalHardNegatives
+    revision: d7d94fa4b946cec4a27c84653aa0cf6b33f74a3c
+    eval_splits: [dev]
+    training_eligible: false
+    ineligibility_reason: MTEB Multilingual v2 evaluates the hard-negative dev split; no train split exposed.
+    notes: Prefer external MIRACL train or mined multilingual retrieval data instead.
+    configs:
+      - {name: ar, language: ara-Arab, available_splits: [dev]}
+      - {name: de, language: deu-Latn, available_splits: [dev]}
+      - {name: en, language: eng-Latn, available_splits: [dev]}
+      - {name: es, language: spa-Latn, available_splits: [dev]}
+      - {name: fr, language: fra-Latn, available_splits: [dev]}
+      - {name: hi, language: hin-Deva, available_splits: [dev]}
+      - {name: id, language: ind-Latn, available_splits: [dev]}
+      - {name: ja, language: jpn-Jpan, available_splits: [dev]}
+      - {name: ko, language: kor-Hang, available_splits: [dev]}
+      - {name: ru, language: rus-Cyrl, available_splits: [dev]}
+      - {name: th, language: tha-Thai, available_splits: [dev]}
+      - {name: zh, language: zho-Hans, available_splits: [dev]}
+
+  - name: MLQARetrieval
+    family: retrieval
+    dataset: mteb/MLQARetrieval
+    revision: 5bef8b6e2601af974fb1a1cca03fd702229be4b6
+    eval_splits: [validation, test]
+    training_eligible: false
+    ineligibility_reason: Validation/test only.
+    configs:
+      - {name: default, language: multilingual, available_splits: [validation, test]}
+
+  - name: BelebeleRetrieval
+    family: retrieval
+    dataset: mteb/belebele
+    revision: 979a211276faa22f671e69d096634193567cfd05
+    eval_splits: [test]
+    training_eligible: false
+    ineligibility_reason: Test-only; MTEB constructs retrieval views dynamically.
+    configs:
+      - {name: default, language: multilingual, available_splits: [test]}
+
+  - name: WikipediaRetrievalMultilingual
+    family: retrieval
+    dataset: mteb/WikipediaRetrievalMultilingual
+    revision: 5f6c91d21f2f5b9afb663858d19848fbd223c775
+    eval_splits: [test]
+    training_eligible: false
+    ineligibility_reason: Test-only.
+    configs:
+      - {name: de, language: deu-Latn, available_splits: [test]}
+      - {name: en, language: eng-Latn, available_splits: [test]}
+      - {name: hi, language: hin-Deva, available_splits: [test]}
+      - {name: it, language: ita-Latn, available_splits: [test]}
+      - {name: pt, language: por-Latn, available_splits: [test]}
+
+  - name: CovidRetrieval
+    family: retrieval
+    dataset: mteb/CovidRetrieval
+    revision: 9c6dc4b276bb47c3ff725bbc5ffcafd56dded38b
+    eval_splits: [dev]
+    training_eligible: false
+    ineligibility_reason: Dev-only evaluation split.
+    configs:
+      - {name: default, language: zho-Hans, available_splits: [dev]}
+
+  # -------------------- Reranking --------------------
+  - name: WebLINXCandidatesReranking
+    family: reranking
+    dataset: mteb/WebLINXCandidatesReranking
+    revision: 107fdc2402d2c4bfb2a720dfcfe1f6ff9d21151b
+    eval_splits: [validation, test_iid, test_cat, test_geo, test_vis, test_web]
+    training_eligible: false
+    ineligibility_reason: No dedicated train split; validation is also evaluated.
+    configs:
+      - {name: default, language: eng-Latn, available_splits: [validation, test_iid, test_cat, test_geo, test_vis, test_web]}
+
+  - name: AlloprofReranking
+    family: reranking
+    dataset: mteb/AlloprofReranking
+    revision: a7d2d793f2e5ba55139bb10088c2e8ee2df2ce02
+    eval_splits: [test]
+    training_eligible: false
+    ineligibility_reason: Test-only.
+    configs:
+      - {name: default, language: fra-Latn, available_splits: [test]}
+
+  - name: VoyageMMarcoReranking
+    family: reranking
+    dataset: mteb/VoyageMMarcoReranking
+    revision: bd2050c52b480e48c51372b4ec98a1cbbc4515f2
+    eval_splits: [test]
+    training_eligible: false
+    ineligibility_reason: Test-only.
+    configs:
+      - {name: default, language: jpn-Jpan, available_splits: [test]}
+
+  - name: WikipediaRerankingMultilingual
+    family: reranking
+    dataset: mteb/WikipediaRerankingMultilingual
+    revision: 803771c366038ed587b21e3d8fe25f8f73134fad
+    eval_splits: [test]
+    training_eligible: false
+    ineligibility_reason: Test-only.
+    configs:
+      - {name: de, language: deu-Latn, available_splits: [test]}
+      - {name: en, language: eng-Latn, available_splits: [test]}
+      - {name: hi, language: hin-Deva, available_splits: [test]}
+      - {name: it, language: ita-Latn, available_splits: [test]}
+      - {name: pt, language: por-Latn, available_splits: [test]}
+
+  - name: RuBQReranking
+    family: reranking
+    dataset: mteb/RuBQReranking
+    revision: e8233e2234f8b24ab47f203b69d1161c3c0bc5a1
+    eval_splits: [test]
+    training_eligible: false
+    ineligibility_reason: Test-only.
+    configs:
+      - {name: default, language: rus-Cyrl, available_splits: [test]}
+
+  - name: T2Reranking
+    family: reranking
+    dataset: mteb/T2Reranking
+    revision: a34fe6bc0dff185af1228e49a0f6fb1de1565627
+    eval_splits: [dev]
+    training_eligible: false
+    ineligibility_reason: Dev-only evaluation split.
+    configs:
+      - {name: default, language: zho-Hans, available_splits: [dev]}
+
+  # -------------------- STS (eligible) --------------------
+  - name: STS12
+    family: sts
+    dataset: mteb/sts12-sts
+    revision: a0d554a64d88156834ff5ae9920b964011b16384
+    eval_splits: [test]
+    license: unknown
+    training_eligible: true
+    score_range: [0, 5]
+    configs:
+      - {name: default, language: eng-Latn, available_splits: [train, test]}
+
+  - name: STSBenchmark
+    family: sts
+    dataset: mteb/stsbenchmark-sts
+    revision: b0fddb56ed78048fa8b90373c8a3cfc37b684831
+    eval_splits: [test]
+    license: unknown
+    training_eligible: true
+    score_range: [0, 5]
+    configs:
+      - {name: default, language: eng-Latn, available_splits: [train, validation, test]}
+
+  - name: GermanSTSBenchmark
+    family: sts
+    dataset: mteb/GermanSTSBenchmark
+    revision: 75829b73cccb64bf86a9f098cbc780d37b786091
+    eval_splits: [validation, test]
+    license: cc-by-sa-3.0
+    training_eligible: true
+    score_range: [0, 5]
+    configs:
+      - {name: default, language: deu-Latn, available_splits: [train, validation, test]}
+
+  - name: JSICK
+    family: sts
+    dataset: mteb/JSICK
+    revision: 729cfe4a16d3c2b61c6aa9f9f6c8a96bb5512868
+    eval_splits: [test]
+    license: cc-by-4.0
+    training_eligible: true
+    score_range: [0, 5]
+    configs:
+      - {name: default, language: jpn-Jpan, available_splits: [train, validation, test]}
+
+  - name: STSB
+    family: sts
+    dataset: mteb/STSB
+    revision: e036defee8f190911de6fc825a944b928c8cda53
+    eval_splits: [validation, test]
+    license: unknown
+    training_eligible: true
+    score_range: [0, 5]
+    configs:
+      - {name: default, language: zho-Hans, available_splits: [train, validation, test]}
+
+  - name: STS22.v2
+    family: sts
+    dataset: mteb/sts22-crosslingual-sts
+    revision: d31f33a128469b20e357535c39b82fb3c3f6f2bd
+    eval_splits: [test]
+    license: unknown
+    training_eligible: true
+    score_range: [1, 4]
+    configs:
+      - {name: ar, language: ara-Arab, available_splits: [train, test]}
+      - {name: de, language: deu-Latn, available_splits: [train, test]}
+      - {name: en, language: eng-Latn, available_splits: [train, test]}
+      - {name: es, language: spa-Latn, available_splits: [train, test]}
+      - {name: fr, language: fra-Latn, available_splits: [train, test]}
+      - {name: pl, language: pol-Latn, available_splits: [train, test]}
+      - {name: de-en, language: deu-Latn|eng-Latn, available_splits: [train, test]}
+
+  # -------------------- STS (ineligible / no usable train) --------------------
+  - name: SICK-R
+    family: sts
+    dataset: mteb/sickr-sts
+    revision: 20a6d6f312dd54037fe07a32d58e5e168867909d
+    eval_splits: [test]
+    training_eligible: false
+    ineligibility_reason: Test-only in MTEB packaging.
+    configs:
+      - {name: default, language: eng-Latn, available_splits: [test]}
+
+  - name: STS13
+    family: sts
+    dataset: mteb/sts13-sts
+    revision: 7e90230a92c190f1bf69ae9002b8cea547a64cca
+    eval_splits: [test]
+    training_eligible: false
+    ineligibility_reason: Test-only.
+    configs:
+      - {name: default, language: eng-Latn, available_splits: [test]}
+
+  - name: STS14
+    family: sts
+    dataset: mteb/sts14-sts
+    revision: 6031580fec1f6af667f0bd2da0a551cf4f0b2375
+    eval_splits: [test]
+    training_eligible: false
+    ineligibility_reason: Test-only.
+    configs:
+      - {name: default, language: eng-Latn, available_splits: [test]}
+
+  - name: STS15
+    family: sts
+    dataset: mteb/sts15-sts
+    revision: ae752c7c21bf194d8b67fd573edf7ae58183cbe3
+    eval_splits: [test]
+    training_eligible: false
+    ineligibility_reason: Test-only.
+    configs:
+      - {name: default, language: eng-Latn, available_splits: [test]}
+
+  - name: STS17
+    family: sts
+    dataset: mteb/sts17-crosslingual-sts
+    revision: faeb762787bd10488a50c8b5be4a3b82e411949c
+    eval_splits: [test]
+    training_eligible: false
+    ineligibility_reason: Test-only.
+    configs:
+      - {name: en-en, language: eng-Latn, available_splits: [test]}
+      - {name: ko-ko, language: kor-Hang, available_splits: [test]}
+
+  - name: SemRel24STS
+    family: sts
+    dataset: mteb/SemRel24STS
+    revision: f5146bf724c55899ca20502851dc98c5405b67f9
+    eval_splits: [test]
+    training_eligible: false
+    ineligibility_reason: MTEB evaluates test; English Hub train exists but is not used by the Multilingual v2 task definition.
+    notes: If using SemRel English train externally, disclose overlap carefully.
+    configs:
+      - {name: eng, language: eng-Latn, available_splits: [test]}
+      - {name: arb, language: ara-Arab, available_splits: [test]}
+      - {name: hin, language: hin-Deva, available_splits: [test]}
+      - {name: ind, language: ind-Latn, available_splits: [test]}
+
+  - name: IndicCrosslingualSTS
+    family: sts
+    dataset: mteb/IndicCrosslingualSTS
+    revision: f0366eb5a20087355c0e131162bbed943ba54b51
+    eval_splits: [test]
+    training_eligible: false
+    ineligibility_reason: Test-only.
+    configs:
+      - {name: en-hi, language: eng-Latn|hin-Deva, available_splits: [test]}
+
+  - name: STSES
+    family: sts
+    dataset: mteb/STSES
+    revision: fe7158e70012087b5a692ce175226a0d213936ad
+    eval_splits: [test]
+    training_eligible: false
+    ineligibility_reason: Test-only.
+    configs:
+      - {name: default, language: spa-Latn, available_splits: [test]}

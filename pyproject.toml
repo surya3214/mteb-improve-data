@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mteb-data"
+version = "0.1.0"
+description = "Generate provenance-preserving training data from MTEB Multilingual v2 and external sources"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "datasets>=3.0",
+  "pyarrow>=14",
+  "PyYAML>=6",
+  "tqdm>=4.66",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+
+[project.scripts]
+mteb-data = "mteb_data.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
