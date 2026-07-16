@@ -27,7 +27,7 @@ def build_dataset(
     max_rows_per_split: int | None = None,
     seed: int = 42,
     pairs_per_anchor: int = 1,
-    allow_cross_language_classification: bool = True,
+    allow_cross_language_classification: bool = False,
     include_external_recommendations: bool = True,
 ) -> dict[str, Any]:
     catalog = load_catalog(catalog_path)

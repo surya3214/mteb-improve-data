@@ -36,6 +36,7 @@ mteb-data check-split --task FinancialPhrasebankClassification --split train
 mteb-data build --output data/processed --max-rows-per-split 200
 mteb-data build --tasks STSBenchmark MassiveIntentClassification --max-rows-per-split 500
 mteb-data build --families sts classification
+mteb-data build --cross-language   # optional: same-label positives across languages (MASSIVE, etc.)
 ```
 
 ## What the pipeline produces

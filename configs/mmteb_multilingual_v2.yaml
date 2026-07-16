@@ -133,7 +133,7 @@ tasks:
     eval_splits: [validation, test]
     license: apache-2.0
     training_eligible: true
-    notes: Shared intent ontology across languages; cross-language positives are allowed.
+    notes: Shared intent ontology across languages; same-language positives by default. Pass --cross-language to allow cross-lingual positives.
     configs:
       - {name: en, language: eng-Latn, available_splits: [train, validation, test]}
       - {name: ko, language: kor-Hang, available_splits: [train, validation, test]}

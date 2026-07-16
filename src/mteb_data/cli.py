@@ -32,8 +32,17 @@ def main(argv: list[str] | None = None) -> int:
     p_build.add_argument("--tasks", nargs="*", default=None)
     p_build.add_argument("--max-rows-per-split", type=int, default=None)
     p_build.add_argument("--seed", type=int, default=42)
-    p_build.add_argument("--pairs-per-anchor", type=int, default=1)
-    p_build.add_argument("--no-cross-language", action="store_true")
+    p_build.add_argument(
+        "--pairs-per-anchor",
+        type=int,
+        default=1,
+        help="Triplets sampled per classification/clustering example (1 is a good default; 2-3 for denser training).",
+    )
+    p_build.add_argument(
+        "--cross-language",
+        action="store_true",
+        help="Allow classification positives from another language when labels share an ontology (off by default).",
+    )
 
     args = parser.parse_args(argv)
     catalog = load_catalog(args.catalog)
@@ -79,7 +88,7 @@ def main(argv: list[str] | None = None) -> int:
             max_rows_per_split=args.max_rows_per_split,
             seed=args.seed,
             pairs_per_anchor=args.pairs_per_anchor,
-            allow_cross_language_classification=not args.no_cross_language,
+            allow_cross_language_classification=args.cross_language,
         )
         print(json.dumps({"build_id": manifest["build_id"], "counts": manifest["counts"]}, indent=2))
         return 0
