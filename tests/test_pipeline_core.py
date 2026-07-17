@@ -55,6 +55,25 @@ def test_refuse_ineligible_clustering_train(catalog):
         assert_trainable_split(task, "train")
 
 
+def test_include_hub_train_override(catalog):
+    fin = _task(catalog, "FinancialPhrasebankClassification")
+    sib = _task(catalog, "SIB200ClusteringS2S")
+    meta = assert_trainable_split(fin, "train", include_hub_train=True)
+    assert meta["contamination"] is True
+    meta2 = assert_trainable_split(sib, "train", include_hub_train=True)
+    assert meta2["contamination"] is True
+
+    default_names = {t.name for t in catalog.eligible_tasks()}
+    override_names = {t.name for t in catalog.eligible_tasks(include_hub_train=True)}
+    assert "FinancialPhrasebankClassification" not in default_names
+    assert "SIB200ClusteringS2S" not in default_names
+    assert "FinancialPhrasebankClassification" in override_names
+    assert "SIB200ClusteringS2S" in override_names
+    assert sib.selectable_splits(include_hub_train=True) == ["train"]
+    # Tasks without a Hub train stay ineligible.
+    assert catalog.by_name("MIRACLRetrievalHardNegatives").is_buildable(include_hub_train=True) is False
+
+
 def test_normalize_score():
     assert normalize_score(2.5, 0, 5) == 0.5
     assert normalize_score(1, 1, 4) == 0.0
@@ -242,3 +261,54 @@ def test_mixture_weights_balance_families():
     mix = compute_mixture_weights(counts, temperature=0.4)
     assert abs(sum(mix["families"].values()) - 1.0) < 1e-6
     assert set(mix["families"]) == {"sts", "classification", "retrieval", "reranking"}
+
+
+def test_build_all_writes_external(tmp_path: Path, monkeypatch):
+    from mteb_data import pipeline as pipeline_mod
+    from mteb_data.sources.external import ExternalSource
+
+    fake_source = ExternalSource(
+        name="toy",
+        dataset="toy/ds",
+        family="bitext",
+        priority=1,
+        description="toy",
+        languages=["en"],
+        shape="pairs",
+        license="mit",
+        overlap_risk="low",
+        default_cap=10,
+    )
+
+    def fake_loads(*args, **kwargs):
+        return iter(())
+
+    def fake_external_sources(path=None):
+        return [fake_source]
+
+    def fake_stream(source, max_rows=None):
+        n = max_rows or source.default_cap
+        for i in range(n):
+            yield {
+                "family": "bitext",
+                "anchor": f"a{i}",
+                "positive": f"b{i}",
+                "source": source.name,
+                "dataset": source.dataset,
+                "license": source.license,
+                "overlap_risk": source.overlap_risk,
+            }
+
+    monkeypatch.setattr(pipeline_mod, "iter_task_loads", fake_loads)
+    monkeypatch.setattr(pipeline_mod, "load_external_sources", fake_external_sources)
+    monkeypatch.setattr(pipeline_mod, "stream_external_pairs", fake_stream)
+
+    manifest = pipeline_mod.build_dataset(
+        output_root=tmp_path,
+        build_all=True,
+        external_cap=3,
+        include_external_recommendations=True,
+    )
+    assert manifest["build_all"] is True
+    assert manifest["counts"]["external_pairs"] == 3
+    assert (tmp_path / manifest["build_id"] / "external_pairs.train.parquet").exists()

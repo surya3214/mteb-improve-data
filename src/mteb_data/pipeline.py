@@ -2,19 +2,18 @@
 
 from __future__ import annotations
 
-from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from mteb_data.catalog import Catalog, audit_catalog, load_catalog
+from mteb_data.catalog import audit_catalog, load_catalog
 from mteb_data.generate.classification import generate_classification_triplets
 from mteb_data.generate.clustering import generate_clustering_triplets
 from mteb_data.generate.sts import generate_sts_pairs
 from mteb_data.io import ensure_build_dir, grouped_split, hash_rows, write_json, write_parquet
 from mteb_data.mixture import compute_mixture_weights, counts_from_rows
 from mteb_data.schema import CanonicalRecord
-from mteb_data.sources.external import load_external_sources
+from mteb_data.sources.external import load_external_sources, stream_external_pairs
 from mteb_data.sources.mteb import EvaluationSplitError, iter_task_loads, normalize_task_split
 
 
@@ -28,6 +27,9 @@ def build_dataset(
     seed: int = 42,
     pairs_per_anchor: int = 1,
     allow_cross_language_classification: bool = False,
+    include_hub_train: bool = False,
+    build_all: bool = False,
+    external_cap: int | None = None,
     include_external_recommendations: bool = True,
 ) -> dict[str, Any]:
     catalog = load_catalog(catalog_path)
@@ -37,25 +39,40 @@ def build_dataset(
     canonical: list[CanonicalRecord] = []
     load_log: list[dict[str, Any]] = []
     exclusions: list[dict[str, Any]] = []
+    contamination_log: list[dict[str, Any]] = []
 
     for task in catalog.tasks:
-        if not task.training_eligible:
-            exclusions.append(
-                {
-                    "task": task.name,
-                    "family": task.family,
-                    "reason": task.ineligibility_reason,
-                    "eval_splits": task.eval_splits,
-                }
-            )
+        if task.is_buildable(include_hub_train=include_hub_train):
+            continue
+        exclusions.append(
+            {
+                "task": task.name,
+                "family": task.family,
+                "reason": task.ineligibility_reason,
+                "eval_splits": task.eval_splits,
+                "has_hub_train": task.has_hub_train,
+            }
+        )
 
     for task, cfg, split in iter_task_loads(
-        catalog, families=families, task_names=task_names, max_rows_per_split=max_rows_per_split
+        catalog,
+        families=families,
+        task_names=task_names,
+        include_hub_train=include_hub_train,
+        max_rows_per_split=max_rows_per_split,
     ):
         try:
-            result = normalize_task_split(task, cfg, split, max_rows=max_rows_per_split)
+            result = normalize_task_split(
+                task,
+                cfg,
+                split,
+                max_rows=max_rows_per_split,
+                include_hub_train=include_hub_train,
+            )
         except EvaluationSplitError as exc:
-            exclusions.append({"task": task.name, "config": cfg.get("name"), "split": split, "reason": str(exc)})
+            exclusions.append(
+                {"task": task.name, "config": cfg.get("name"), "split": split, "reason": str(exc)}
+            )
             continue
         except Exception as exc:  # Hub / network / schema issues should not abort the whole build.
             load_log.append(
@@ -70,16 +87,19 @@ def build_dataset(
             continue
 
         canonical.extend(result.records)
-        load_log.append(
-            {
-                "task": result.task,
-                "config": result.config,
-                "split": result.split,
-                "status": "ok" if not result.skipped_reason else "skipped",
-                "n_records": len(result.records),
-                "skipped_reason": result.skipped_reason,
-            }
-        )
+        entry = {
+            "task": result.task,
+            "config": result.config,
+            "split": result.split,
+            "status": "ok" if not result.skipped_reason else "skipped",
+            "n_records": len(result.records),
+            "skipped_reason": result.skipped_reason,
+            "contamination": result.contamination,
+            "contamination_reason": result.contamination_reason,
+        }
+        load_log.append(entry)
+        if result.contamination:
+            contamination_log.append(entry)
 
     # Persist canonical JSONL-ish parquet via flattened dicts.
     canonical_rows = [r.to_dict() for r in canonical]
@@ -107,6 +127,56 @@ def build_dataset(
     write_parquet(out_dir / "metric_triplets.clustering.train.parquet", cluster_train)
     write_parquet(out_dir / "metric_triplets.clustering.val.parquet", cluster_val)
 
+    external_rows: list[dict[str, Any]] = []
+    external_log: list[dict[str, Any]] = []
+    external_sources_meta = []
+    sources = load_external_sources()
+    if include_external_recommendations or build_all:
+        external_sources_meta = [
+            {
+                "name": s.name,
+                "dataset": s.dataset,
+                "priority": s.priority,
+                "overlap_risk": s.overlap_risk,
+                "default_cap": s.default_cap,
+                "license": s.license,
+                "notes": s.notes,
+            }
+            for s in sources
+        ]
+
+    if build_all:
+        for source in sources:
+            cap = external_cap if external_cap is not None else source.default_cap
+            if max_rows_per_split is not None:
+                cap = min(cap, max_rows_per_split)
+            try:
+                rows = list(stream_external_pairs(source, max_rows=cap))
+            except Exception as exc:
+                external_log.append(
+                    {
+                        "source": source.name,
+                        "dataset": source.dataset,
+                        "status": "error",
+                        "error": str(exc),
+                        "cap": cap,
+                    }
+                )
+                continue
+            external_rows.extend(rows)
+            external_log.append(
+                {
+                    "source": source.name,
+                    "dataset": source.dataset,
+                    "status": "ok",
+                    "n_rows": len(rows),
+                    "cap": cap,
+                    "family": source.family,
+                    "overlap_risk": source.overlap_risk,
+                }
+            )
+        write_parquet(out_dir / "external_pairs.train.parquet", external_rows)
+
     counts: dict[str, dict[str, int]] = {
         "sts": counts_from_rows(sts_train, "sts"),
         "classification": counts_from_rows(cls_train, "classification"),
@@ -117,27 +187,15 @@ def build_dataset(
     mixture = compute_mixture_weights(counts)
 
     overlap_tasks = sorted({r.provenance.task for r in canonical})
-    external = []
-    if include_external_recommendations:
-        external = [
-            {
-                "name": s.name,
-                "dataset": s.dataset,
-                "priority": s.priority,
-                "overlap_risk": s.overlap_risk,
-                "default_cap": s.default_cap,
-                "license": s.license,
-                "notes": s.notes,
-            }
-            for s in load_external_sources()
-        ]
-
     manifest = {
         "build_id": build_id,
         "benchmark": catalog.benchmark,
         "mteb_commit": catalog.mteb_commit,
         "seed": seed,
         "max_rows_per_split": max_rows_per_split,
+        "include_hub_train": include_hub_train,
+        "build_all": build_all,
+        "external_cap": external_cap,
         "benchmark_adapted": True,
         "zero_shot": False,
         "warning": (
@@ -153,17 +211,21 @@ def build_dataset(
             "classification_val": len(cls_val),
             "clustering_train": len(cluster_train),
             "clustering_val": len(cluster_val),
+            "external_pairs": len(external_rows),
         },
         "hashes": {
             "sts_train": hash_rows(sts_train[:1000]),
             "classification_train": hash_rows(cls_train[:1000]),
             "clustering_train": hash_rows(cluster_train[:1000]),
+            "external_pairs": hash_rows(external_rows[:1000]) if external_rows else None,
         },
         "mixture": mixture,
         "loads": load_log,
         "exclusions": exclusions,
-        "external_sources": external,
-        "audit": audit_catalog(catalog),
+        "contamination": contamination_log,
+        "external_sources": external_sources_meta,
+        "external_loads": external_log,
+        "audit": audit_catalog(catalog, include_hub_train=include_hub_train),
     }
     write_json(out_dir / "manifest.json", manifest)
     write_json(out_dir / "mixture.json", mixture)

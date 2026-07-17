@@ -19,22 +19,59 @@ class LoadResult:
     split: str
     records: list[CanonicalRecord]
     skipped_reason: str | None = None
+    contamination: bool = False
+    contamination_reason: str | None = None
 
 
 class EvaluationSplitError(ValueError):
     """Raised when a requested split is an official MTEB evaluation split."""
 
 
-def assert_trainable_split(task: TaskConfig, split: str) -> None:
-    if split in task.eval_splits:
+def assert_trainable_split(
+    task: TaskConfig,
+    split: str,
+    *,
+    include_hub_train: bool = False,
+) -> dict[str, Any]:
+    """Validate whether a split may be loaded.
+
+    Returns contamination metadata when --include-hub-train overrides safety rules.
+    """
+    hub_train_override = include_hub_train and split == "train" and task.has_hub_train
+
+    if not task.training_eligible and not hub_train_override:
+        raise EvaluationSplitError(
+            f"Refusing to load {task.name}: training_eligible=false ({task.ineligibility_reason})"
+        )
+
+    if split in task.eval_splits and not hub_train_override:
         raise EvaluationSplitError(
             f"Refusing to load {task.name} split={split!r}: listed in eval_splits={task.eval_splits}. "
             "This prevents direct evaluation leakage."
         )
-    if not task.training_eligible:
-        raise EvaluationSplitError(
-            f"Refusing to load {task.name}: training_eligible=false ({task.ineligibility_reason})"
-        )
+
+    if hub_train_override and (not task.training_eligible or split in task.eval_splits):
+        return {
+            "contamination": True,
+            "contamination_reason": (
+                task.ineligibility_reason
+                or f"Hub train split overlaps MTEB eval_splits={task.eval_splits}"
+            ),
+        }
+    return {"contamination": False, "contamination_reason": None}
+
+
+def _config_in_target_languages(catalog: Catalog, language: str | None) -> bool:
+    if not language:
+        return True
+    if "|" in str(language):
+        return True
+    normalized = normalize_language(language) or language
+    if normalized in catalog.target_languages.values():
+        return True
+    if language in catalog.target_languages:
+        return True
+    return False
 
 
 def iter_task_loads(
@@ -42,8 +79,10 @@ def iter_task_loads(
     *,
     families: list[str] | None = None,
     task_names: list[str] | None = None,
+    include_hub_train: bool = False,
     max_rows_per_split: int | None = None,
 ) -> Iterator[tuple[TaskConfig, dict[str, Any], str]]:
+    del max_rows_per_split  # selection only; row caps applied at load time
     names = set(task_names) if task_names else None
     fams = set(families) if families else None
     for task in catalog.tasks:
@@ -51,18 +90,15 @@ def iter_task_loads(
             continue
         if fams and task.family not in fams:
             continue
-        if not task.training_eligible:
+        if not task.is_buildable(include_hub_train=include_hub_train):
             continue
         for cfg in task.configs:
-            language = normalize_language(cfg.get("language")) or cfg.get("language")
-            # Skip non-target languages when language is a concrete BCP tag.
-            if language and language not in catalog.target_languages.values() and "|" not in str(language):
-                # still allow if it is one of the requested short codes mapped elsewhere
-                if language not in catalog.target_languages:
-                    # Keep multilingual configs that are explicitly listed for target langs only.
-                    continue
-            for split in cfg.get("available_splits", []):
-                if split in task.eval_splits:
+            language = cfg.get("language")
+            if not _config_in_target_languages(catalog, language):
+                continue
+            available = set(cfg.get("available_splits", []))
+            for split in task.selectable_splits(include_hub_train=include_hub_train):
+                if split not in available:
                     continue
                 yield task, cfg, split
 
@@ -93,8 +129,9 @@ def normalize_task_split(
     split: str,
     *,
     max_rows: int | None = None,
+    include_hub_train: bool = False,
 ) -> LoadResult:
-    assert_trainable_split(task, split)
+    meta = assert_trainable_split(task, split, include_hub_train=include_hub_train)
     config_name = cfg.get("name", "default")
     language = cfg.get("language", "unknown")
     rows = load_split_rows(
@@ -123,5 +160,14 @@ def normalize_task_split(
             split=split,
             records=[],
             skipped_reason=f"Family {task.family} requires specialized table loaders.",
+            contamination=meta["contamination"],
+            contamination_reason=meta["contamination_reason"],
         )
-    return LoadResult(task=task.name, config=config_name, split=split, records=records)
+    return LoadResult(
+        task=task.name,
+        config=config_name,
+        split=split,
+        records=records,
+        contamination=meta["contamination"],
+        contamination_reason=meta["contamination_reason"],
+    )

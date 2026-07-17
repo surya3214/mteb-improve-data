@@ -17,7 +17,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--catalog", type=Path, default=None, help="Path to mmteb_multilingual_v2.yaml")
     sub = parser.add_subparsers(dest="command", required=True)
 
-    sub.add_parser("audit", help="Summarize eligible/ineligible tasks")
+    p_audit = sub.add_parser("audit", help="Summarize eligible/ineligible tasks")
+    p_audit.add_argument(
+        "--include-hub-train",
+        action="store_true",
+        help="Show eligibility as if Hub train overrides were enabled.",
+    )
 
     p_ext = sub.add_parser("external", help="Show prioritized external sources")
     p_ext.add_argument("--config", type=Path, default=None)
@@ -25,6 +30,11 @@ def main(argv: list[str] | None = None) -> int:
     p_check = sub.add_parser("check-split", help="Validate whether a split is trainable")
     p_check.add_argument("--task", required=True)
     p_check.add_argument("--split", required=True)
+    p_check.add_argument(
+        "--include-hub-train",
+        action="store_true",
+        help="Allow Hub train splits even when they overlap MTEB eval_splits.",
+    )
 
     p_build = sub.add_parser("build", help="Download eligible splits and generate training views")
     p_build.add_argument("--output", type=Path, default=Path("data/processed"))
@@ -43,12 +53,32 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="Allow classification positives from another language when labels share an ontology (off by default).",
     )
+    p_build.add_argument(
+        "--include-hub-train",
+        action="store_true",
+        help=(
+            "Also download catalog tasks that expose a physical Hub train split, "
+            "even when marked ineligible due to eval overlap (e.g. SIB200, FinancialPhrasebank)."
+        ),
+    )
+    p_build.add_argument(
+        "--all",
+        dest="build_all",
+        action="store_true",
+        help="Build selected MTEB data and also ingest capped external sources to increase dataset size.",
+    )
+    p_build.add_argument(
+        "--external-cap",
+        type=int,
+        default=None,
+        help="Per-source row cap for --all external ingestion (default: each source's default_cap).",
+    )
 
     args = parser.parse_args(argv)
     catalog = load_catalog(args.catalog)
 
     if args.command == "audit":
-        print(json.dumps(audit_catalog(catalog), indent=2))
+        print(json.dumps(audit_catalog(catalog, include_hub_train=args.include_hub_train), indent=2))
         return 0
 
     if args.command == "external":
@@ -72,11 +102,24 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "check-split":
         task = catalog.by_name(args.task)
         try:
-            assert_trainable_split(task, args.split)
+            meta = assert_trainable_split(
+                task, args.split, include_hub_train=args.include_hub_train
+            )
         except EvaluationSplitError as exc:
             print(json.dumps({"ok": False, "error": str(exc)}, indent=2))
             return 1
-        print(json.dumps({"ok": True, "task": task.name, "split": args.split}, indent=2))
+        print(
+            json.dumps(
+                {
+                    "ok": True,
+                    "task": task.name,
+                    "split": args.split,
+                    "include_hub_train": args.include_hub_train,
+                    **meta,
+                },
+                indent=2,
+            )
+        )
         return 0
 
     if args.command == "build":
@@ -89,8 +132,22 @@ def main(argv: list[str] | None = None) -> int:
             seed=args.seed,
             pairs_per_anchor=args.pairs_per_anchor,
             allow_cross_language_classification=args.cross_language,
+            include_hub_train=args.include_hub_train,
+            build_all=args.build_all,
+            external_cap=args.external_cap,
         )
-        print(json.dumps({"build_id": manifest["build_id"], "counts": manifest["counts"]}, indent=2))
+        print(
+            json.dumps(
+                {
+                    "build_id": manifest["build_id"],
+                    "counts": manifest["counts"],
+                    "include_hub_train": manifest["include_hub_train"],
+                    "build_all": manifest["build_all"],
+                    "contamination_n": len(manifest.get("contamination") or []),
+                },
+                indent=2,
+            )
+        )
         return 0
 
     parser.error(f"Unknown command {args.command}")

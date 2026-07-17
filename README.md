@@ -25,18 +25,29 @@ pip install -e ".[dev]"
 ```bash
 # Summarize eligible vs ineligible tasks
 mteb-data audit
+mteb-data audit --include-hub-train   # preview eligibility with Hub-train overrides
 
 # Show prioritized external sources (NLLB, CCMatrix, xP3x, ...)
 mteb-data external
 
-# Refuse eval splits even if physically named train
+# Refuse eval splits even if physically named train (default policy)
 mteb-data check-split --task FinancialPhrasebankClassification --split train
+# Allow that Hub train split when maximizing scores
+mteb-data check-split --task FinancialPhrasebankClassification --split train --include-hub-train
 
 # Build training views (downloads eligible Hub splits)
 mteb-data build --output data/processed --max-rows-per-split 200
 mteb-data build --tasks STSBenchmark MassiveIntentClassification --max-rows-per-split 500
 mteb-data build --families sts classification
 mteb-data build --cross-language   # optional: same-label positives across languages (MASSIVE, etc.)
+
+# Opt-in: also download catalog tasks that physically expose Hub `train`
+# (SIB200, FinancialPhrasebank, etc.). Contamination is recorded in the manifest.
+mteb-data build --include-hub-train --max-rows-per-split 200
+
+# Larger build: MTEB data + capped external sources -> external_pairs.train.parquet
+mteb-data build --all --external-cap 1000 --max-rows-per-split 200
+mteb-data build --all --include-hub-train --external-cap 1000
 ```
 
 ## What the pipeline produces
@@ -47,11 +58,12 @@ Under `data/processed/<build-id>/`:
 |------|----------|
 | `sts_pairs.train.parquet` | Scored sentence pairs (`score` in `[0,1]`) |
 | `metric_triplets.classification.train.parquet` | Anchor / positive / negative |
-| `metric_triplets.clustering.train.parquet` | Cluster-aware triplets (when eligible data exists) |
-| `manifest.json` | Revisions, exclusions, hashes, mixture, MTEB overlap names |
+| `metric_triplets.clustering.train.parquet` | Cluster-aware triplets (when eligible / `--include-hub-train` data exists) |
+| `external_pairs.train.parquet` | Written only with `--all` (capped NLLB/CCMatrix/xP3x/...) |
+| `manifest.json` | Revisions, exclusions, contamination, hashes, mixture, MTEB overlap names |
 | `mixture.json` | Family/language/task sampling weights |
 
-Retrieval and reranking adapters/generators are implemented and unit-tested. Official Multilingual v2 retrieval/reranking tasks in the catalog are currently **ineligible** (no safe train split), so use external sources for those families.
+Retrieval and reranking adapters/generators are implemented and unit-tested. Official Multilingual v2 retrieval/reranking packs in the catalog generally have **no Hub `train` split**, so use `--all` external sources (and/or add external retrieval corpora) for those families.
 
 ## Canonical schemas
 
